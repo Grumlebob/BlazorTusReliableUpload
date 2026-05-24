@@ -1,0 +1,50 @@
+using System.Net.Http.Json;
+using BlazorAutoApp.Core.Features.Movies.Contracts;
+using BlazorAutoApp.Core.Features.Movies.UseCases.CreateMovie;
+using BlazorAutoApp.Core.Features.Movies.UseCases.DeleteMovie;
+using BlazorAutoApp.Core.Features.Movies.UseCases.GetMovie;
+using BlazorAutoApp.Core.Features.Movies.UseCases.GetMovies;
+using BlazorAutoApp.Core.Features.Movies.UseCases.UpdateMovie;
+
+namespace BlazorAutoApp.Client.Features.Movies;
+
+public class MoviesClientService(HttpClient http) : IMoviesApi
+{
+    private readonly HttpClient _http = http;
+
+    public async Task<GetMoviesResponse> GetAsync(GetMoviesRequest req)
+    {
+        var res = await _http.GetFromJsonAsync<GetMoviesResponse>("api/movies");
+        return res ?? new GetMoviesResponse { Movies = [] };
+    }
+
+    public async Task<GetMovieResponse?> GetByIdAsync(GetMovieRequest req)
+    {
+        return await _http.GetFromJsonAsync<GetMovieResponse>($"api/movies/{req.Id}");
+    }
+
+    public async Task<CreateMovieResponse> CreateAsync(CreateMovieRequest req)
+    {
+        var res = await _http.PostAsJsonAsync("api/movies", req);
+        res.EnsureSuccessStatusCode();
+        return (await res.Content.ReadFromJsonAsync<CreateMovieResponse>())!;
+    }
+
+    public async Task<bool> UpdateAsync(UpdateMovieRequest req)
+    {
+        var res = await _http.PutAsJsonAsync($"api/movies/{req.Id}", req);
+        if (res.StatusCode == System.Net.HttpStatusCode.NoContent) return true;
+        if (res.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
+        res.EnsureSuccessStatusCode();
+        return true;
+    }
+
+    public async Task<bool> DeleteAsync(DeleteMovieRequest req)
+    {
+        var res = await _http.DeleteAsync($"api/movies/{req.Id}");
+        if (res.StatusCode == System.Net.HttpStatusCode.NoContent) return true;
+        if (res.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
+        res.EnsureSuccessStatusCode();
+        return true;
+    }
+}

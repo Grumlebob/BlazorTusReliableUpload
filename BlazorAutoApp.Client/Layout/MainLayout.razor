@@ -1,0 +1,16 @@
+@inherits LayoutComponentBase
+<div class="relative flex flex-col md:flex-row">
+    <main class="flex-1 bg-stone-50 text-gray-900">
+        <NavMenu/>
+
+        <article class="container mx-auto mb-2 p-4 max-w-[1500px]">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" class="bg-yellow-200 fixed bottom-0 left-0 w-full p-[0.6rem_1.25rem_0.7rem_1.25rem] shadow-[0_-1px_2px_rgba(0,0,0,0.2)] hidden z-50">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="absolute top-2 right-3 cursor-pointer dismiss">🗙</a>
+</div>

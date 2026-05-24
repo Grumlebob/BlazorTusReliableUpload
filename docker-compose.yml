@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - ./.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: BlazorAutoApp/Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTPS_PORTS: "7186"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "localdevpassword"
+      Database__RunMigrationsAtStartup: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "7186:7186"
+    volumes:
+      - ./docker/https:/https:ro
+      # Persist application storage (uploads, thumbnails, TUS temp)
+      - ./data/storage:/app/Storage
+
+  seq:
+    image: datalust/seq:latest
+    env_file:
+      - ./.env
+    ports:
+      - "8081:80"    # UI
+      - "5341:5341"  # Ingestion
+    volumes:
+      - seqdata:/data
+
+  redis:
+    image: redis:7-alpine
+    env_file:
+      - ./.env
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    env_file:
+      - ./.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "5540:5540"  # Redis Insight UI
+    volumes:
+      - redisinsight:/data
+
+volumes:
+  pgdata:
+  seqdata:
+  redisinsight:
